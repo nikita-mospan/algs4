@@ -6,10 +6,15 @@ public class Board {
 
     private final int[][] tiles;
     private final int n;
-    private final int[][] GOAL_TILES;
 
     private static int getGoalValue(int n, int row, int col) {
         return row * n + col + 1;
+    }
+
+    private static void swap(int[][] a, int row1, int col1, int row2, int col2) {
+        int temp = a[row1][col1];
+        a[row1][col1] = a[row2][col2];
+        a[row2][col2] = temp;
     }
 
     // create a board from an n-by-n array of tiles,
@@ -23,15 +28,6 @@ public class Board {
         for (int row = 0; row < n; row++) {
             this.tiles[row] = tiles[row].clone();
         }
-
-        GOAL_TILES = new int[n][n];
-        for (int row = 0; row < n; row++) {
-            for (int col = 0; col < n; col++) {
-                GOAL_TILES[row][col] = getGoalValue(n, row, col);
-            }
-        }
-        GOAL_TILES[n - 1][n - 1] = 0;
-
     }
 
     // string representation of this board
@@ -58,7 +54,7 @@ public class Board {
         int result = 0;
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < n; col++) {
-                if (tiles[row][col] != GOAL_TILES[row][col] && !(row == n - 1 && col == n - 1)) {
+                if (tiles[row][col] != getGoalValue(n, row, col) && !(row == n - 1 && col == n - 1)) {
                     result++;
                 }
             }
@@ -82,7 +78,7 @@ public class Board {
         int result = 0;
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < n; col++) {
-                if (tiles[row][col] != GOAL_TILES[row][col] && !(row == n - 1 && col == n - 1)) {
+                if (tiles[row][col] != getGoalValue(n, row, col) && !(row == n - 1 && col == n - 1)) {
                     int[] rowCol = getRowCol(getGoalValue(n, row, col));
                     result += Math.abs(row - rowCol[0]) + Math.abs(col - rowCol[1]);
                 }
@@ -93,24 +89,25 @@ public class Board {
 
     // is this board the goal board?
     public boolean isGoal() {
-        return Arrays.deepEquals(tiles, GOAL_TILES);
+        for (int row = 0; row < n; row++) {
+            for (int col = 0; col < n; col++) {
+                    if (tiles[row][col] != getGoalValue(n, row, col) && !(row == n-1 && col == n - 1)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
 
-        Board board = (Board) o;
+        Board board = (Board) other;
 
         if (n != board.n) return false;
         return Arrays.deepEquals(tiles, board.tiles);
-    }
-
-    private static void swap(int[][] a, int row1, int col1, int row2, int col2) {
-        int temp = a[row1][col1];
-        a[row1][col1] = a[row2][col2];
-        a[row2][col2] = temp;
     }
 
     private void addToNeighborsBag(int row1, int col1, int row2, int col2, Bag<Board> neighborsBag) {
@@ -170,7 +167,6 @@ public class Board {
     // unit testing (not graded)
     public static void main(String[] args) {
         int[][] tiles = {{8, 1, 3}, {4, 0, 2}, {7, 6, 5}};
-//        int [][] tiles = {{1,2,3},{4,5,6},{7,8,0}};
         Board board = new Board(tiles);
         System.out.println(board);
         System.out.println(board.dimension());
