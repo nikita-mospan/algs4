@@ -1,9 +1,7 @@
-import edu.princeton.cs.algs4.Bag;
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.MinPQ;
+import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdOut;
-
-import java.util.Comparator;
 
 public class Solver {
 
@@ -12,12 +10,14 @@ public class Solver {
         final int numberOfMoves;
         final SearchNode prevNode;
         final int manhattan;
+        final int priority;
 
         private SearchNode(Board board, int numberOfMoves, SearchNode prevNode, int manhattan) {
             this.board = board;
             this.numberOfMoves = numberOfMoves;
             this.prevNode = prevNode;
             this.manhattan = manhattan;
+            this.priority = numberOfMoves + manhattan;
         }
 
         public Board getBoard() {
@@ -28,19 +28,17 @@ public class Solver {
             return prevNode;
         }
 
-        public int getManhattan() {
-            return manhattan;
-        }
-
         public int getNumberOfMoves() {
             return numberOfMoves;
         }
 
+        public int getPriority() {
+            return priority;
+        }
+
         @Override
         public int compareTo(SearchNode other) {
-            return Comparator.comparing(SearchNode::getNumberOfMoves)
-                    .thenComparing(SearchNode::getManhattan)
-                    .compare(this, other);
+            return Integer.compare(getPriority(), other.getPriority());
         }
     }
 
@@ -87,9 +85,6 @@ public class Solver {
                 if (searchNode.getBoard().isGoal()) {
                     return searchNode;
                 }
-                if (searchNode.getNumberOfMoves() >= 15) {
-                    System.out.println("Start debug!");
-                }
                 for (Board neighbor : searchNode.getBoard().neighbors()) {
                     SearchNode prevNode = searchNode.getPrevNode();
                     if (prevNode == null || !neighbor.equals(prevNode.getBoard())) {
@@ -121,11 +116,11 @@ public class Solver {
     // sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution() {
         if (isSolvable()) {
-            Bag<Board> solution = new Bag<>();
+            Stack<Board> solution = new Stack<>();
             SearchNode curSearchNode = solutionSearchNode;
-            solution.add(curSearchNode.getBoard());
+            solution.push(curSearchNode.getBoard());
             while (curSearchNode.getPrevNode() != null) {
-                solution.add(curSearchNode.getPrevNode().getBoard());
+                solution.push(curSearchNode.getPrevNode().getBoard());
                 curSearchNode = curSearchNode.getPrevNode();
             }
             return solution;
