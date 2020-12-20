@@ -9,8 +9,7 @@ public class PointSET {
 
     private final Set<Point2D> point2DSet;
 
-    public PointSET()                               // construct an empty set of points
-    {
+    public PointSET() {
         point2DSet = new TreeSet<>();
     }
 
@@ -31,18 +30,18 @@ public class PointSET {
     public void insert(Point2D p) {
         checkPointNotNull(p);
         point2DSet.add(p);
-    }             // add the point to the set (if it is not already in the set)
+    }
 
     public boolean contains(Point2D p) {
         checkPointNotNull(p);
         return point2DSet.contains(p);
-    }         // does the set contain point p?
+    }
 
     public void draw() {
         for (Point2D point2D : point2DSet) {
             point2D.draw();
         }
-    }                       // draw all points to standard draw
+    }
 
     public Iterable<Point2D> range(RectHV rect) {
         Bag<Point2D> point2DList = new Bag<>();
