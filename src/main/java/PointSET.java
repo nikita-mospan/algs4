@@ -65,7 +65,7 @@ public class PointSET {
             double curNearest = Double.POSITIVE_INFINITY;
             Point2D nearestPoint = null;
             for (Point2D curPoint : point2DSet) {
-                final double curDistance = p.distanceTo(curPoint);
+                final double curDistance = p.distanceSquaredTo(curPoint);
                 if (curDistance < curNearest) {
                     curNearest = curDistance;
                     nearestPoint = curPoint;
@@ -76,6 +76,6 @@ public class PointSET {
     }
 
     public static void main(String[] args) {
-
+        System.out.println("Hello world!");
     }
 }

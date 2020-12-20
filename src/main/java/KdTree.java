@@ -1,3 +1,4 @@
+import edu.princeton.cs.algs4.Bag;
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
 import edu.princeton.cs.algs4.StdDraw;
@@ -9,10 +10,20 @@ public class KdTree {
         private final Point2D key;
         private Node left, right;
         private int size;
+        private final RectHV rect;
 
-        public Node(Point2D key, int size) {
+        public Node(Point2D key, int size, RectHV rect) {
             this.key = key;
             this.size = size;
+            this.rect = rect;
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "key=" + key.toString() +
+                    ", rect=" + rect.toString() +
+                    '}';
         }
     }
 
@@ -43,20 +54,32 @@ public class KdTree {
     public void insert(Point2D p) {
         checkPointNotNull(p);
 
-        root = insert(root, p, true);
+        root = insert(root, p, true, 0, 0, 1, 1);
     }
 
-    private Node insert(Node node, Point2D p, final boolean compareByX) {
-        if (node == null) return new Node(p, 1);
+    private Node insert(Node node, Point2D p, final boolean compareByX, double xMin, double yMin, double xMax, double yMax) {
+        if (node == null) return new Node(p, 1, new RectHV(xMin, yMin, xMax, yMax));
 
-        double cmp = compareByX
-                ? p.x() - node.key.x()
-                : p.y() - node.key.y();
-        if (cmp < 0) {
-            node.left = insert(node.left, p, !compareByX);
-        }
-        else if (cmp > 0) {
-            node.right = insert(node.right, p, !compareByX);
+        if (!node.key.equals(p)) {
+            double cmp = compareByX
+                    ? p.x() - node.key.x()
+                    : p.y() - node.key.y();
+
+            if (cmp < 0) {
+                if (compareByX) {
+                    xMax = node.key.x();
+                } else {
+                    yMax = node.key.y();
+                }
+                node.left = insert(node.left, p, !compareByX, xMin, yMin, xMax, yMax);
+            } else {
+                if (compareByX) {
+                    xMin = node.key.x();
+                } else {
+                    yMin = node.key.y();
+                }
+                node.right = insert(node.right, p, !compareByX, xMin, yMin, xMax, yMax);
+            }
         }
 
         node.size = size(node.left) + size(node.right) + 1;
@@ -71,17 +94,16 @@ public class KdTree {
     private boolean get(Node node, Point2D p) {
         boolean compareByX = true;
         while (node != null) {
+            if (p.equals(node.key)) {
+                return true;
+            }
             double cmp = compareByX
                     ? p.x() - node.key.x()
                     : p.y() - node.key.y();
             if (cmp < 0) {
                 node = node.left;
-            }
-            else if (cmp > 0) {
+            } else {
                 node = node.right;
-            }
-            else {
-                return true;
             }
             compareByX = !compareByX;
         }
@@ -91,7 +113,7 @@ public class KdTree {
     private void drawNode(Node node, boolean compareByX, Node prevNode, double xStart, double yStart, double xEnd, double yEnd) {
         if (node == null) return;
         final Point2D p = node.key;
-        System.out.println("Point: " + p);
+        System.out.println("Node: " + node);
         StdDraw.setPenRadius(0.01);
         StdDraw.setPenColor();
         p.draw();
@@ -102,7 +124,7 @@ public class KdTree {
         }
         Point2D startPoint, endPoint;
         if (compareByX) {
-            if (prevPoint != null && prevPoint.y() < p.y()) {
+            if (prevPoint != null && prevPoint.y() <= p.y()) {
                 yStart = prevPoint.y();
             } else if (prevPoint != null) {
                 yEnd = prevPoint.y();
@@ -111,7 +133,7 @@ public class KdTree {
             endPoint = new Point2D(p.x(), yEnd);
             StdDraw.setPenColor(StdDraw.RED);
         } else {
-            if (prevPoint != null && prevPoint.x() < p.x()) {
+            if (prevPoint != null && prevPoint.x() <= p.x()) {
                 xStart = prevPoint.x();
             } else if (prevPoint != null) {
                 xEnd = prevPoint.x();
@@ -132,10 +154,55 @@ public class KdTree {
     }
 
     public Iterable<Point2D> range(RectHV rect) {
-        return null;
+        Bag<Point2D> pointBag = new Bag<>();
+        range(rect, root, pointBag);
+        return pointBag;
+    }
+
+    private void range(RectHV queryRect, Node node, Bag<Point2D> pointBag) {
+        if (node == null) return;
+
+        if (node.rect.intersects(queryRect)) {
+            if (queryRect.contains(node.key)) {
+                pointBag.add(node.key);
+            }
+            range(queryRect, node.left, pointBag);
+            range(queryRect, node.right, pointBag);
+        }
     }
 
     public Point2D nearest(Point2D p) {
-        return null;
+        if (isEmpty()) {
+            return null;
+        }
+        Node nearestNode = nearest(p, root, null, true);
+        return nearestNode.key;
     }
+
+    private Node nearest(Point2D queryPoint, Node node, Node curNearestNode, boolean compareByX) {
+        if (node == null) return curNearestNode;
+
+        double curDistance = node.key.distanceSquaredTo(queryPoint);
+        double nearestDistance = curNearestNode == null ? Double.POSITIVE_INFINITY : curNearestNode.key.distanceSquaredTo(queryPoint);
+        double distanceToNodeRectangle = node.rect.distanceSquaredTo(queryPoint);
+        if (nearestDistance < distanceToNodeRectangle) {
+            return curNearestNode;
+        }
+        if (curDistance < nearestDistance) {
+            curNearestNode = node;
+        }
+
+        double cmp = compareByX
+                ? queryPoint.x() - node.key.x()
+                : queryPoint.y() - node.key.y();
+        if (cmp < 0) {
+            curNearestNode = nearest(queryPoint, node.left, curNearestNode, !compareByX);
+            curNearestNode = nearest(queryPoint, node.right, curNearestNode, !compareByX);
+        } else {
+            curNearestNode = nearest(queryPoint, node.right, curNearestNode, !compareByX);
+            curNearestNode = nearest(queryPoint, node.left, curNearestNode, !compareByX);
+        }
+        return curNearestNode;
+    }
+
 }
