@@ -88,10 +88,8 @@ public class KdTree {
         return false;
     }
 
-    private void drawNode(Node node, boolean compareByX, Node prevNode) {
-        if (node == null) {
-            return;
-        }
+    private void drawNode(Node node, boolean compareByX, Node prevNode, double xStart, double yStart, double xEnd, double yEnd) {
+        if (node == null) return;
         final Point2D p = node.key;
         System.out.println("Point: " + p);
         StdDraw.setPenRadius(0.01);
@@ -102,12 +100,7 @@ public class KdTree {
         if (prevNode != null) {
             prevPoint = prevNode.key;
         }
-        double yStart = 0;
-        double yEnd = 1;
-        double xStart = 0;
-        double xEnd = 1;
-        Point2D startPoint;
-        Point2D endPoint;
+        Point2D startPoint, endPoint;
         if (compareByX) {
             if (prevPoint != null && prevPoint.y() < p.y()) {
                 yStart = prevPoint.y();
@@ -120,14 +113,8 @@ public class KdTree {
         } else {
             if (prevPoint != null && prevPoint.x() < p.x()) {
                 xStart = prevPoint.x();
-                if (p.x() < root.key.x()) {
-                    xEnd = root.key.x();
-                }
             } else if (prevPoint != null) {
                 xEnd = prevPoint.x();
-                if (p.x() > root.key.x()) {
-                    xStart = root.key.x();
-                }
             }
             startPoint = new Point2D(xStart, p.y());
             endPoint = new Point2D(xEnd, p.y());
@@ -136,12 +123,12 @@ public class KdTree {
         System.out.println("startPoint: " + startPoint);
         System.out.println("endPoint: " + endPoint);
         startPoint.drawTo(endPoint);
-        drawNode(node.left, !compareByX, node);
-        drawNode(node.right, !compareByX, node);
+        drawNode(node.left, !compareByX, node, xStart, yStart, xEnd, yEnd);
+        drawNode(node.right, !compareByX, node, xStart, yStart, xEnd, yEnd);
     }
 
     public void draw() {
-        drawNode(root, true, null);
+        drawNode(root, true, null, 0, 0, 1, 1);
     }
 
     public Iterable<Point2D> range(RectHV rect) {
