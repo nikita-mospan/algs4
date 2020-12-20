@@ -154,6 +154,9 @@ public class KdTree {
     }
 
     public Iterable<Point2D> range(RectHV rect) {
+        if (rect == null) {
+            throw new IllegalArgumentException("Argument to range must not be null!");
+        }
         Bag<Point2D> pointBag = new Bag<>();
         range(rect, root, pointBag);
         return pointBag;
@@ -172,6 +175,7 @@ public class KdTree {
     }
 
     public Point2D nearest(Point2D p) {
+        checkPointNotNull(p);
         if (isEmpty()) {
             return null;
         }
