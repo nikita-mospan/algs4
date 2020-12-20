@@ -185,7 +185,7 @@ public class KdTree {
         double curDistance = node.key.distanceSquaredTo(queryPoint);
         double nearestDistance = curNearestNode == null ? Double.POSITIVE_INFINITY : curNearestNode.key.distanceSquaredTo(queryPoint);
         double distanceToNodeRectangle = node.rect.distanceSquaredTo(queryPoint);
-        if (nearestDistance < distanceToNodeRectangle) {
+        if (nearestDistance <= distanceToNodeRectangle) {
             return curNearestNode;
         }
         if (curDistance < nearestDistance) {
@@ -197,10 +197,16 @@ public class KdTree {
                 : queryPoint.y() - node.key.y();
         if (cmp < 0) {
             curNearestNode = nearest(queryPoint, node.left, curNearestNode, !compareByX);
-            curNearestNode = nearest(queryPoint, node.right, curNearestNode, !compareByX);
+            double distanceToRightNodeRectangle = node.right == null ? Double.POSITIVE_INFINITY : node.right.rect.distanceSquaredTo(queryPoint);
+            if (curNearestNode.key.distanceSquaredTo(queryPoint) > distanceToRightNodeRectangle) {
+                curNearestNode = nearest(queryPoint, node.right, curNearestNode, !compareByX);
+            }
         } else {
             curNearestNode = nearest(queryPoint, node.right, curNearestNode, !compareByX);
-            curNearestNode = nearest(queryPoint, node.left, curNearestNode, !compareByX);
+            double distanceToLeftNodeRectangle = node.left == null ? Double.POSITIVE_INFINITY : node.left.rect.distanceSquaredTo(queryPoint);
+            if (curNearestNode.key.distanceSquaredTo(queryPoint) > distanceToLeftNodeRectangle) {
+                curNearestNode = nearest(queryPoint, node.left, curNearestNode, !compareByX);
+            }
         }
         return curNearestNode;
     }
