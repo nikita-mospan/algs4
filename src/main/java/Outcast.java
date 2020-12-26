@@ -4,7 +4,7 @@ import edu.princeton.cs.algs4.StdOut;
 public class Outcast {
     private final WordNet wordNet;
 
-    public Outcast(WordNet wordnet){
+    public Outcast(WordNet wordnet) {
         if (wordnet == null) {
             throw new IllegalArgumentException("wordnet argument must not be null!");
         }
@@ -16,11 +16,13 @@ public class Outcast {
             throw new IllegalArgumentException("nouns argument must not be null!");
         }
         String outcast = null;
-        int maxDistance = -1;
-        for(int i = 0; i < nouns.length; i++) {
+        int maxDistance = 0;
+        for (int i = 0; i < nouns.length; i++) {
             int curDistance = 0;
-            for (int j = 0; j < nouns.length && i != j; j++) {
-                curDistance += wordNet.distance(nouns[i], nouns[j]);
+            for (int j = 0; j < nouns.length; j++) {
+                if (i != j) {
+                    curDistance += wordNet.distance(nouns[i], nouns[j]);
+                }
             }
             if (curDistance > maxDistance) {
                 maxDistance = curDistance;

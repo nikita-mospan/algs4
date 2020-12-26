@@ -1,1 +1,1 @@
-horse zebra cat bear table
+table horse zebra cat bear

@@ -4,7 +4,9 @@ import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -12,7 +14,7 @@ public class SAP {
 
     private final Digraph digraph;
     private final Map<LengthAndAncestorSingle, LengthAndAncestorSingle> lengthAndAncestorSingleMap;
-    private final Map<LengthAndAncestorIterable, LengthAndAncestorIterable> lengthAndAncestorIterableMap;
+    private final List<LengthAndAncestorIterable> lengthAndAncestorIterableList;
 
     // constructor takes a digraph (not necessarily a DAG)
     public SAP(Digraph G) {
@@ -21,7 +23,7 @@ public class SAP {
         }
         digraph = G;
         lengthAndAncestorSingleMap = new HashMap<>();
-        lengthAndAncestorIterableMap = new HashMap<>();
+        lengthAndAncestorIterableList = new ArrayList<>();
     }
 
     private static final class LengthAndAncestor {
@@ -68,10 +70,10 @@ public class SAP {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            LengthAndAncestorSingle that = (LengthAndAncestorSingle) o;
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (other == null || getClass() != other.getClass()) return false;
+            LengthAndAncestorSingle that = (LengthAndAncestorSingle) other;
             return v == that.v && w == that.w;
         }
 
@@ -107,16 +109,16 @@ public class SAP {
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            LengthAndAncestorIterable that = (LengthAndAncestorIterable) o;
+        public boolean equals(Object other) {
+            if (this == other) return true;
+            if (other == null || getClass() != other.getClass()) return false;
+            LengthAndAncestorIterable that = (LengthAndAncestorIterable) other;
             return v.equals(that.v) && w.equals(that.w);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(v, w);
+            return 0;
         }
     }
 
@@ -140,7 +142,7 @@ public class SAP {
         return new LengthAndAncestor(minDistance, ancestor);
     }
 
-    private LengthAndAncestorSingle computeLengthAndAncestorSingle (int v, int w) {
+    private LengthAndAncestorSingle computeLengthAndAncestorSingle(int v, int w) {
         final BreadthFirstDirectedPaths breadthFirstDirectedPathsV = new BreadthFirstDirectedPaths(digraph, v);
         final BreadthFirstDirectedPaths breadthFirstDirectedPathsW = new BreadthFirstDirectedPaths(digraph, w);
         LengthAndAncestor lengthAndAncestor = computeLengthAndAncestor(breadthFirstDirectedPathsV, breadthFirstDirectedPathsW);
@@ -170,7 +172,7 @@ public class SAP {
         }
     }
 
-    private LengthAndAncestorIterable computeLengthAndAncestorIterable (Iterable<Integer> v, Iterable<Integer> w) {
+    private LengthAndAncestorIterable computeLengthAndAncestorIterable(Iterable<Integer> v, Iterable<Integer> w) {
         final BreadthFirstDirectedPaths breadthFirstDirectedPathsV = new BreadthFirstDirectedPaths(digraph, v);
         final BreadthFirstDirectedPaths breadthFirstDirectedPathsW = new BreadthFirstDirectedPaths(digraph, w);
 
@@ -181,19 +183,33 @@ public class SAP {
     // length of shortest ancestral path between any vertex in v and any vertex in w; -1 if no such path
     public int length(Iterable<Integer> v, Iterable<Integer> w) {
         checkNounsNotNull(v, w);
-        final LengthAndAncestorIterable lengthAndAncestorIterable =
-                lengthAndAncestorIterableMap.computeIfAbsent(new LengthAndAncestorIterable(v, w), key -> computeLengthAndAncestorIterable(v, w));
-        lengthAndAncestorIterableMap.put(lengthAndAncestorIterable, lengthAndAncestorIterable);
-        return lengthAndAncestorIterable.getLength();
+        if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
+            return -1;
+        }
+        int index = lengthAndAncestorIterableList.indexOf(new LengthAndAncestorIterable(v, w));
+        if (index >= 0) {
+            return lengthAndAncestorIterableList.get(index).getLength();
+        } else {
+            final LengthAndAncestorIterable lengthAndAncestorIterable = computeLengthAndAncestorIterable(v, w);
+            lengthAndAncestorIterableList.add(lengthAndAncestorIterable);
+            return lengthAndAncestorIterable.getLength();
+        }
     }
 
     // a common ancestor that participates in shortest ancestral path; -1 if no such path
     public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
         checkNounsNotNull(v, w);
-        final LengthAndAncestorIterable lengthAndAncestorIterable =
-                lengthAndAncestorIterableMap.computeIfAbsent(new LengthAndAncestorIterable(v, w), key -> computeLengthAndAncestorIterable(v, w));
-        lengthAndAncestorIterableMap.put(lengthAndAncestorIterable, lengthAndAncestorIterable);
-        return lengthAndAncestorIterable.getAncestor();
+        if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
+            return -1;
+        }
+        int index = lengthAndAncestorIterableList.indexOf(new LengthAndAncestorIterable(v, w));
+        if (index >= 0) {
+            return lengthAndAncestorIterableList.get(index).getAncestor();
+        } else {
+            final LengthAndAncestorIterable lengthAndAncestorIterable = computeLengthAndAncestorIterable(v, w);
+            lengthAndAncestorIterableList.add(lengthAndAncestorIterable);
+            return lengthAndAncestorIterable.getAncestor();
+        }
     }
 
     // do unit testing of this class
@@ -204,7 +220,7 @@ public class SAP {
         while (!StdIn.isEmpty()) {
             int v = StdIn.readInt();
             int w = StdIn.readInt();
-            int length   = sap.length(v, w);
+            int length = sap.length(v, w);
             int ancestor = sap.ancestor(v, w);
             StdOut.printf("length = %d, ancestor = %d\n", length, ancestor);
         }
