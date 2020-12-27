@@ -1,20 +1,16 @@
-import edu.princeton.cs.algs4.BreadthFirstDirectedPaths;
 import edu.princeton.cs.algs4.Digraph;
 import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 public class SAP {
 
     private final Digraph digraph;
-    private final Map<LengthAndAncestorSingle, LengthAndAncestorSingle> lengthAndAncestorSingleMap;
-    private final List<LengthAndAncestorIterable> lengthAndAncestorIterableList;
+    private final List<LengthAndAncestorOfIterables> lengthAndAncestorOfIterablesList;
 
     // constructor takes a digraph (not necessarily a DAG)
     public SAP(Digraph G) {
@@ -22,15 +18,25 @@ public class SAP {
             throw new IllegalArgumentException("Argument G must not be null!");
         }
         digraph = G;
-        lengthAndAncestorSingleMap = new HashMap<>();
-        lengthAndAncestorIterableList = new ArrayList<>();
+        lengthAndAncestorOfIterablesList = new ArrayList<>();
     }
 
-    private static final class LengthAndAncestor {
+    private static class LengthAndAncestorOfIterables {
+        private final Iterable<Integer> v;
+        private final Iterable<Integer> w;
         private final int length;
         private final int ancestor;
 
-        public LengthAndAncestor(int length, int ancestor) {
+        public LengthAndAncestorOfIterables(Iterable<Integer> v, Iterable<Integer> w) {
+            this.v = v;
+            this.w = w;
+            length = -1;
+            ancestor = -1;
+        }
+
+        public LengthAndAncestorOfIterables(Iterable<Integer> v, Iterable<Integer> w, int length, int ancestor) {
+            this.v = v;
+            this.w = w;
             this.length = length;
             this.ancestor = ancestor;
         }
@@ -42,77 +48,12 @@ public class SAP {
         public int getAncestor() {
             return ancestor;
         }
-    }
-
-    private static class LengthAndAncestorSingle {
-        private final int v;
-        private final int w;
-        private final LengthAndAncestor lengthAndAncestor;
-
-        public LengthAndAncestorSingle(int v, int w) {
-            this.v = v;
-            this.w = w;
-            lengthAndAncestor = new LengthAndAncestor(-1, -1);
-        }
-
-        public LengthAndAncestorSingle(int v, int w, LengthAndAncestor lengthAndAncestor) {
-            this.v = v;
-            this.w = w;
-            this.lengthAndAncestor = lengthAndAncestor;
-        }
-
-        public int getLength() {
-            return lengthAndAncestor.getLength();
-        }
-
-        public int getAncestor() {
-            return lengthAndAncestor.getAncestor();
-        }
 
         @Override
         public boolean equals(Object other) {
             if (this == other) return true;
             if (other == null || getClass() != other.getClass()) return false;
-            LengthAndAncestorSingle that = (LengthAndAncestorSingle) other;
-            return v == that.v && w == that.w;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(v, w);
-        }
-    }
-
-    private static class LengthAndAncestorIterable {
-        private final Iterable<Integer> v;
-        private final Iterable<Integer> w;
-        private final LengthAndAncestor lengthAndAncestor;
-
-        public LengthAndAncestorIterable(Iterable<Integer> v, Iterable<Integer> w) {
-            this.v = v;
-            this.w = w;
-            lengthAndAncestor = new LengthAndAncestor(-1, -1);
-        }
-
-        public LengthAndAncestorIterable(Iterable<Integer> v, Iterable<Integer> w, LengthAndAncestor lengthAndAncestor) {
-            this.v = v;
-            this.w = w;
-            this.lengthAndAncestor = lengthAndAncestor;
-        }
-
-        public int getLength() {
-            return lengthAndAncestor.getLength();
-        }
-
-        public int getAncestor() {
-            return lengthAndAncestor.getAncestor();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (other == null || getClass() != other.getClass()) return false;
-            LengthAndAncestorIterable that = (LengthAndAncestorIterable) other;
+            LengthAndAncestorOfIterables that = (LengthAndAncestorOfIterables) other;
             return v.equals(that.v) && w.equals(that.w);
         }
 
@@ -120,50 +61,34 @@ public class SAP {
         public int hashCode() {
             return 0;
         }
-    }
 
-    private LengthAndAncestor computeLengthAndAncestor(BreadthFirstDirectedPaths breadthFirstDirectedPathsV,
-                                                       BreadthFirstDirectedPaths breadthFirstDirectedPathsW) {
-        int minDistance = Integer.MAX_VALUE;
-        int ancestor = -1;
-        for (int vertex = 0; vertex < digraph.V(); vertex++) {
-            if (breadthFirstDirectedPathsV.pathTo(vertex) != null && breadthFirstDirectedPathsW.pathTo(vertex) != null) {
-                int curDistance = breadthFirstDirectedPathsV.distTo(vertex) + breadthFirstDirectedPathsW.distTo(vertex);
-                if (curDistance < minDistance) {
-                    ancestor = vertex;
-                    minDistance = curDistance;
-                }
-            }
+        @Override
+        public String toString() {
+            return "LengthAndAncestorOfIterables{" +
+                    "v=" + v +
+                    ", w=" + w +
+                    ", length=" + length +
+                    ", ancestor=" + ancestor +
+                    '}';
         }
-
-        if (minDistance == Integer.MAX_VALUE) {
-            minDistance = -1;
-        }
-        return new LengthAndAncestor(minDistance, ancestor);
-    }
-
-    private LengthAndAncestorSingle computeLengthAndAncestorSingle(int v, int w) {
-        final BreadthFirstDirectedPaths breadthFirstDirectedPathsV = new BreadthFirstDirectedPaths(digraph, v);
-        final BreadthFirstDirectedPaths breadthFirstDirectedPathsW = new BreadthFirstDirectedPaths(digraph, w);
-        LengthAndAncestor lengthAndAncestor = computeLengthAndAncestor(breadthFirstDirectedPathsV, breadthFirstDirectedPathsW);
-
-        return new LengthAndAncestorSingle(v, w, lengthAndAncestor);
     }
 
     // length of shortest ancestral path between v and w; -1 if no such path
     public int length(int v, int w) {
-        final LengthAndAncestorSingle lengthAndAncestorSingle =
-                lengthAndAncestorSingleMap.computeIfAbsent(new LengthAndAncestorSingle(v, w), key -> computeLengthAndAncestorSingle(v, w));
-        lengthAndAncestorSingleMap.put(lengthAndAncestorSingle, lengthAndAncestorSingle);
-        return lengthAndAncestorSingle.getLength();
+        List<Integer> iterableV = new ArrayList<>();
+        iterableV.add(v);
+        List<Integer> iterableW = new ArrayList<>();
+        iterableW.add(w);
+        return length(iterableV, iterableW);
     }
 
     // a common ancestor of v and w that participates in a shortest ancestral path; -1 if no such path
     public int ancestor(int v, int w) {
-        final LengthAndAncestorSingle lengthAndAncestorSingle =
-                lengthAndAncestorSingleMap.computeIfAbsent(new LengthAndAncestorSingle(v, w), key -> computeLengthAndAncestorSingle(v, w));
-        lengthAndAncestorSingleMap.put(lengthAndAncestorSingle, lengthAndAncestorSingle);
-        return lengthAndAncestorSingle.getAncestor();
+        List<Integer> iterableV = new ArrayList<>();
+        iterableV.add(v);
+        List<Integer> iterableW = new ArrayList<>();
+        iterableW.add(w);
+        return ancestor(iterableV, iterableW);
     }
 
     private static void checkNounsNotNull(Iterable<Integer> v, Iterable<Integer> w) {
@@ -172,43 +97,129 @@ public class SAP {
         }
     }
 
-    private LengthAndAncestorIterable computeLengthAndAncestorIterable(Iterable<Integer> v, Iterable<Integer> w) {
-        final BreadthFirstDirectedPaths breadthFirstDirectedPathsV = new BreadthFirstDirectedPaths(digraph, v);
-        final BreadthFirstDirectedPaths breadthFirstDirectedPathsW = new BreadthFirstDirectedPaths(digraph, w);
+    private void initQueueForBfs(Queue<Integer> q, boolean[] marked, int[] distTo, Iterable<Integer> sources) {
+        for (int s : sources) {
+            marked[s] = true;
+            distTo[s] = 0;
+            q.enqueue(s);
+        }
+    }
 
-        LengthAndAncestor lengthAndAncestor = computeLengthAndAncestor(breadthFirstDirectedPathsV, breadthFirstDirectedPathsW);
-        return new LengthAndAncestorIterable(v, w, lengthAndAncestor);
+    private LengthAndAncestorOfIterables doSingleBfsStep(Iterable<Integer> iterableV,
+                                                         Iterable<Integer> iterableW,
+                                                         Queue<Integer> q,
+                                                         boolean[] marked,
+                                                         int[] distTo,
+                                                         boolean[] otherMarked,
+                                                         int[] otherDistTo) {
+        if (q.isEmpty()) {
+            return null;
+        }
+        int v = q.dequeue();
+        LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = null;
+        int minLength = Integer.MAX_VALUE;
+        for (int adjV : digraph.adj(v)) {
+            if (!marked[adjV]) {
+                distTo[adjV] = distTo[v] + 1;
+                marked[adjV] = true;
+                if (otherMarked[adjV]) {
+                    int curLength = distTo[adjV] + otherDistTo[adjV];
+                    if (curLength < minLength) {
+                        minLength = curLength;
+                        minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, minLength, adjV);
+                    }
+                }
+                q.enqueue(adjV);
+            }
+        }
+        return minLengthAndAncestorOfIterables;
+    }
+
+    private LengthAndAncestorOfIterables computeLengthAndAncestorIterable(Iterable<Integer> iterableV, Iterable<Integer> iterableW) {
+        for (Integer vItem : iterableV) {
+            for (Integer wItem : iterableW) {
+                if (vItem.equals(wItem)) {
+                    return new LengthAndAncestorOfIterables(iterableV, iterableW, 0, vItem);
+                }
+            }
+        }
+
+        boolean[] markedV = new boolean[digraph.V()];
+        boolean[] markedW = new boolean[digraph.V()];
+        int[] distToV = new int[digraph.V()];
+        int[] distToW = new int[digraph.V()];
+
+        Queue<Integer> qV = new Queue<>();
+        initQueueForBfs(qV, markedV, distToV, iterableV);
+        Queue<Integer> qW = new Queue<>();
+        initQueueForBfs(qW, markedW, distToW, iterableW);
+
+        boolean doBfsStepFromV = true;
+        LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, -1, -1);
+        while (!qV.isEmpty() || !qW.isEmpty()) {
+            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = doBfsStepFromV
+                    ? doSingleBfsStep(iterableV, iterableW, qV, markedV, distToV, markedW, distToW)
+                    : doSingleBfsStep(iterableV, iterableW, qW, markedW, distToW, markedV, distToV);
+            int minLength = minLengthAndAncestorOfIterables.getLength();
+            if (lengthAndAncestorOfIterables != null &&
+                    (lengthAndAncestorOfIterables.getLength() < minLength || minLength == -1)) {
+                minLengthAndAncestorOfIterables = lengthAndAncestorOfIterables;
+            }
+            doBfsStepFromV = !doBfsStepFromV;
+        }
+
+        return minLengthAndAncestorOfIterables;
+    }
+
+    private void validateVertexes(Iterable<Integer> v) {
+        for (Integer vItem : v) {
+            if (vItem == null || vItem < 0 || vItem >= digraph.V()) {
+                throw new IllegalArgumentException("Wrong vertex: " + vItem);
+            }
+        }
+    }
+
+    private void validateIterables(Iterable<Integer> v, Iterable<Integer> w) {
+        checkNounsNotNull(v, w);
+        validateVertexes(v);
+        validateVertexes(w);
     }
 
     // length of shortest ancestral path between any vertex in v and any vertex in w; -1 if no such path
     public int length(Iterable<Integer> v, Iterable<Integer> w) {
-        checkNounsNotNull(v, w);
+        validateIterables(v, w);
         if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
             return -1;
         }
-        int index = lengthAndAncestorIterableList.indexOf(new LengthAndAncestorIterable(v, w));
+        int index = lengthAndAncestorOfIterablesList.indexOf(new LengthAndAncestorOfIterables(v, w));
         if (index >= 0) {
-            return lengthAndAncestorIterableList.get(index).getLength();
+            return lengthAndAncestorOfIterablesList.get(index).getLength();
         } else {
-            final LengthAndAncestorIterable lengthAndAncestorIterable = computeLengthAndAncestorIterable(v, w);
-            lengthAndAncestorIterableList.add(lengthAndAncestorIterable);
-            return lengthAndAncestorIterable.getLength();
+            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = computeLengthAndAncestorIterable(v, w);
+            lengthAndAncestorOfIterablesList.add(lengthAndAncestorOfIterables);
+            lengthAndAncestorOfIterablesList.add(new LengthAndAncestorOfIterables(w, v,
+                    lengthAndAncestorOfIterables.getLength(), lengthAndAncestorOfIterables.getAncestor()));
+            return lengthAndAncestorOfIterables.getLength();
         }
     }
 
     // a common ancestor that participates in shortest ancestral path; -1 if no such path
     public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
-        checkNounsNotNull(v, w);
+        validateIterables(v, w);
         if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
             return -1;
         }
-        int index = lengthAndAncestorIterableList.indexOf(new LengthAndAncestorIterable(v, w));
+        validateVertexes(v);
+        validateVertexes(w);
+        int index = lengthAndAncestorOfIterablesList.indexOf(new LengthAndAncestorOfIterables(v, w));
         if (index >= 0) {
-            return lengthAndAncestorIterableList.get(index).getAncestor();
+            return lengthAndAncestorOfIterablesList.get(index).getAncestor();
         } else {
-            final LengthAndAncestorIterable lengthAndAncestorIterable = computeLengthAndAncestorIterable(v, w);
-            lengthAndAncestorIterableList.add(lengthAndAncestorIterable);
-            return lengthAndAncestorIterable.getAncestor();
+            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = computeLengthAndAncestorIterable(v, w);
+            lengthAndAncestorOfIterablesList.add(lengthAndAncestorOfIterables);
+            lengthAndAncestorOfIterablesList.add(new LengthAndAncestorOfIterables(w, v,
+                    lengthAndAncestorOfIterables.getLength(), lengthAndAncestorOfIterables.getAncestor()));
+            return lengthAndAncestorOfIterables.getAncestor();
         }
     }
 
@@ -220,7 +231,7 @@ public class SAP {
         while (!StdIn.isEmpty()) {
             int v = StdIn.readInt();
             int w = StdIn.readInt();
-            int length = sap.length(v, w);
+            int length   = sap.length(v, w);
             int ancestor = sap.ancestor(v, w);
             StdOut.printf("length = %d, ancestor = %d\n", length, ancestor);
         }
