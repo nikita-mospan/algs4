@@ -105,26 +105,37 @@ public class SAP {
         }
     }
 
+    private void finishBfs(Queue<Integer> q) {
+        while (!q.isEmpty()) {
+            q.dequeue();
+        }
+    }
+
     private LengthAndAncestorOfIterables doSingleBfsStep(Iterable<Integer> iterableV,
                                                          Iterable<Integer> iterableW,
                                                          Queue<Integer> q,
                                                          boolean[] marked,
                                                          int[] distTo,
                                                          boolean[] otherMarked,
-                                                         int[] otherDistTo) {
+                                                         int[] otherDistTo,
+                                                         int minLength,
+                                                         boolean firstAncestorFound) {
         if (q.isEmpty()) {
             return null;
         }
         int v = q.dequeue();
         LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = null;
-        int minLength = Integer.MAX_VALUE;
         for (int adjV : digraph.adj(v)) {
             if (!marked[adjV]) {
                 distTo[adjV] = distTo[v] + 1;
                 marked[adjV] = true;
                 if (otherMarked[adjV]) {
+                    if (distTo[adjV] > minLength && firstAncestorFound) {
+                        finishBfs(q);
+                        return null;
+                    }
                     int curLength = distTo[adjV] + otherDistTo[adjV];
-                    if (curLength < minLength) {
+                    if (curLength < minLength || minLength == -1) {
                         minLength = curLength;
                         minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, minLength, adjV);
                     }
@@ -155,14 +166,17 @@ public class SAP {
         initQueueForBfs(qW, markedW, distToW, iterableW);
 
         boolean doBfsStepFromV = true;
+        boolean firstAncestorFound = false;
         LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, -1, -1);
         while (!qV.isEmpty() || !qW.isEmpty()) {
+            final int minLength = minLengthAndAncestorOfIterables.getLength();
             final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = doBfsStepFromV
-                    ? doSingleBfsStep(iterableV, iterableW, qV, markedV, distToV, markedW, distToW)
-                    : doSingleBfsStep(iterableV, iterableW, qW, markedW, distToW, markedV, distToV);
-            int minLength = minLengthAndAncestorOfIterables.getLength();
-            if (lengthAndAncestorOfIterables != null &&
-                    (lengthAndAncestorOfIterables.getLength() < minLength || minLength == -1)) {
+                    ? doSingleBfsStep(iterableV, iterableW, qV, markedV, distToV, markedW, distToW, minLength, firstAncestorFound)
+                    : doSingleBfsStep(iterableV, iterableW, qW, markedW, distToW, markedV, distToV, minLength, firstAncestorFound);
+            if (firstAncestorFound && lengthAndAncestorOfIterables != null && lengthAndAncestorOfIterables.getLength() < minLength) {
+                minLengthAndAncestorOfIterables = lengthAndAncestorOfIterables;
+            } else if (lengthAndAncestorOfIterables != null) {
+                firstAncestorFound = true;
                 minLengthAndAncestorOfIterables = lengthAndAncestorOfIterables;
             }
             doBfsStepFromV = !doBfsStepFromV;
@@ -231,7 +245,7 @@ public class SAP {
         while (!StdIn.isEmpty()) {
             int v = StdIn.readInt();
             int w = StdIn.readInt();
-            int length   = sap.length(v, w);
+            int length = sap.length(v, w);
             int ancestor = sap.ancestor(v, w);
             StdOut.printf("length = %d, ancestor = %d\n", length, ancestor);
         }
