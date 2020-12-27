@@ -5,71 +5,49 @@ import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SAP {
 
     private final Digraph digraph;
-    private final List<LengthAndAncestorOfIterables> lengthAndAncestorOfIterablesList;
+    private final boolean[] markedV;
+    private final boolean[] markedW;
+    private final  int[] distToV;
+    private final int[] distToW;
+    private final Set<Integer> prevChangedIndexesMarkedV;
+    private final Set<Integer> prevChangedIndexesMarkedW;
+    private final Set<Integer> prevChangedIndexesDistToV;
+    private final Set<Integer> prevChangedIndexesDistToW;
+
 
     // constructor takes a digraph (not necessarily a DAG)
     public SAP(Digraph G) {
         if (G == null) {
             throw new IllegalArgumentException("Argument G must not be null!");
         }
-        digraph = G;
-        lengthAndAncestorOfIterablesList = new ArrayList<>();
+        digraph = new Digraph(G);
+
+        markedV = new boolean[digraph.V()];
+        markedW = new boolean[digraph.V()];
+        distToV = new int[digraph.V()];
+        distToW = new int[digraph.V()];
+
+
+        prevChangedIndexesMarkedV = new HashSet<>();
+        prevChangedIndexesMarkedW = new HashSet<>();
+        prevChangedIndexesDistToV = new HashSet<>();
+        prevChangedIndexesDistToW = new HashSet<>();
     }
 
-    private static class LengthAndAncestorOfIterables {
-        private final Iterable<Integer> v;
-        private final Iterable<Integer> w;
+    private static final class LengthAndAncestor {
         private final int length;
         private final int ancestor;
 
-        public LengthAndAncestorOfIterables(Iterable<Integer> v, Iterable<Integer> w) {
-            this.v = v;
-            this.w = w;
-            length = -1;
-            ancestor = -1;
-        }
-
-        public LengthAndAncestorOfIterables(Iterable<Integer> v, Iterable<Integer> w, int length, int ancestor) {
-            this.v = v;
-            this.w = w;
+        public LengthAndAncestor(int length, int ancestor) {
             this.length = length;
             this.ancestor = ancestor;
-        }
-
-        public int getLength() {
-            return length;
-        }
-
-        public int getAncestor() {
-            return ancestor;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (other == null || getClass() != other.getClass()) return false;
-            LengthAndAncestorOfIterables that = (LengthAndAncestorOfIterables) other;
-            return v.equals(that.v) && w.equals(that.w);
-        }
-
-        @Override
-        public int hashCode() {
-            return 0;
-        }
-
-        @Override
-        public String toString() {
-            return "LengthAndAncestorOfIterables{" +
-                    "v=" + v +
-                    ", w=" + w +
-                    ", length=" + length +
-                    ", ancestor=" + ancestor +
-                    '}';
         }
     }
 
@@ -97,10 +75,29 @@ public class SAP {
         }
     }
 
-    private void initQueueForBfs(Queue<Integer> q, boolean[] marked, int[] distTo, Iterable<Integer> sources) {
+    private void initQueueForBfs(Queue<Integer> q, boolean[] marked, int[] distTo, Iterable<Integer> sources, boolean isV) {
+        Set<Integer> prevChangedIndexesMarked;
+        Set<Integer> prevChangedIndexesDistTo;
+        if (isV) {
+            prevChangedIndexesMarked = prevChangedIndexesMarkedV;
+            prevChangedIndexesDistTo = prevChangedIndexesDistToV;
+        } else {
+            prevChangedIndexesMarked = prevChangedIndexesMarkedW;
+            prevChangedIndexesDistTo = prevChangedIndexesDistToW;
+        }
+        for (Integer prevMarkedIndex : prevChangedIndexesMarked) {
+            marked[prevMarkedIndex] = false;
+        }
+        for (Integer prevDistToIndex : prevChangedIndexesDistTo) {
+            distTo[prevDistToIndex] = 0;
+        }
+        prevChangedIndexesMarked.clear();
+        prevChangedIndexesDistTo.clear();
         for (int s : sources) {
             marked[s] = true;
             distTo[s] = 0;
+            prevChangedIndexesMarked.add(s);
+            prevChangedIndexesDistTo.add(s);
             q.enqueue(s);
         }
     }
@@ -111,24 +108,34 @@ public class SAP {
         }
     }
 
-    private LengthAndAncestorOfIterables doSingleBfsStep(Iterable<Integer> iterableV,
-                                                         Iterable<Integer> iterableW,
-                                                         Queue<Integer> q,
-                                                         boolean[] marked,
-                                                         int[] distTo,
-                                                         boolean[] otherMarked,
-                                                         int[] otherDistTo,
-                                                         int minLength,
-                                                         boolean firstAncestorFound) {
+    private LengthAndAncestor doSingleBfsStep(Queue<Integer> q,
+                                              boolean[] marked,
+                                              int[] distTo,
+                                              boolean[] otherMarked,
+                                              int[] otherDistTo,
+                                              int minLength,
+                                              boolean firstAncestorFound,
+                                              boolean doBfsStepFromV) {
         if (q.isEmpty()) {
             return null;
         }
+        Set<Integer> prevChangedIndexesMarked;
+        Set<Integer> prevChangedIndexesDistTo;
+        if (doBfsStepFromV) {
+            prevChangedIndexesMarked = prevChangedIndexesMarkedV;
+            prevChangedIndexesDistTo = prevChangedIndexesDistToV;
+        } else {
+            prevChangedIndexesMarked = prevChangedIndexesMarkedW;
+            prevChangedIndexesDistTo = prevChangedIndexesDistToW;
+        }
         int v = q.dequeue();
-        LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = null;
+        LengthAndAncestor minLengthAndAncestor = null;
         for (int adjV : digraph.adj(v)) {
             if (!marked[adjV]) {
                 distTo[adjV] = distTo[v] + 1;
                 marked[adjV] = true;
+                prevChangedIndexesDistTo.add(adjV);
+                prevChangedIndexesMarked.add(adjV);
                 if (otherMarked[adjV]) {
                     if (distTo[adjV] > minLength && firstAncestorFound) {
                         finishBfs(q);
@@ -137,52 +144,47 @@ public class SAP {
                     int curLength = distTo[adjV] + otherDistTo[adjV];
                     if (curLength < minLength || minLength == -1) {
                         minLength = curLength;
-                        minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, minLength, adjV);
+                        minLengthAndAncestor = new LengthAndAncestor(curLength, adjV);
                     }
                 }
                 q.enqueue(adjV);
             }
         }
-        return minLengthAndAncestorOfIterables;
+        return minLengthAndAncestor;
     }
 
-    private LengthAndAncestorOfIterables computeLengthAndAncestorIterable(Iterable<Integer> iterableV, Iterable<Integer> iterableW) {
+    private LengthAndAncestor computeLengthAndAncestor(Iterable<Integer> iterableV, Iterable<Integer> iterableW) {
         for (Integer vItem : iterableV) {
             for (Integer wItem : iterableW) {
                 if (vItem.equals(wItem)) {
-                    return new LengthAndAncestorOfIterables(iterableV, iterableW, 0, vItem);
+                    return new LengthAndAncestor(0, vItem);
                 }
             }
         }
 
-        boolean[] markedV = new boolean[digraph.V()];
-        boolean[] markedW = new boolean[digraph.V()];
-        int[] distToV = new int[digraph.V()];
-        int[] distToW = new int[digraph.V()];
-
         Queue<Integer> qV = new Queue<>();
-        initQueueForBfs(qV, markedV, distToV, iterableV);
+        initQueueForBfs(qV, markedV, distToV, iterableV, true);
         Queue<Integer> qW = new Queue<>();
-        initQueueForBfs(qW, markedW, distToW, iterableW);
+        initQueueForBfs(qW, markedW, distToW, iterableW, false);
 
         boolean doBfsStepFromV = true;
         boolean firstAncestorFound = false;
-        LengthAndAncestorOfIterables minLengthAndAncestorOfIterables = new LengthAndAncestorOfIterables(iterableV, iterableW, -1, -1);
+        LengthAndAncestor minLengthAndAncestor = new LengthAndAncestor(-1, -1);
         while (!qV.isEmpty() || !qW.isEmpty()) {
-            final int minLength = minLengthAndAncestorOfIterables.getLength();
-            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = doBfsStepFromV
-                    ? doSingleBfsStep(iterableV, iterableW, qV, markedV, distToV, markedW, distToW, minLength, firstAncestorFound)
-                    : doSingleBfsStep(iterableV, iterableW, qW, markedW, distToW, markedV, distToV, minLength, firstAncestorFound);
-            if (firstAncestorFound && lengthAndAncestorOfIterables != null && lengthAndAncestorOfIterables.getLength() < minLength) {
-                minLengthAndAncestorOfIterables = lengthAndAncestorOfIterables;
-            } else if (lengthAndAncestorOfIterables != null) {
+            final int minLength = minLengthAndAncestor.length;
+            final LengthAndAncestor lengthAndAncestor = doBfsStepFromV
+                    ? doSingleBfsStep(qV, markedV, distToV, markedW, distToW, minLength, firstAncestorFound, true)
+                    : doSingleBfsStep(qW, markedW, distToW, markedV, distToV, minLength, firstAncestorFound, false);
+            if (firstAncestorFound && lengthAndAncestor != null && lengthAndAncestor.length < minLength) {
+                minLengthAndAncestor = lengthAndAncestor;
+            } else if (lengthAndAncestor != null) {
                 firstAncestorFound = true;
-                minLengthAndAncestorOfIterables = lengthAndAncestorOfIterables;
+                minLengthAndAncestor = lengthAndAncestor;
             }
             doBfsStepFromV = !doBfsStepFromV;
         }
 
-        return minLengthAndAncestorOfIterables;
+        return minLengthAndAncestor;
     }
 
     private void validateVertexes(Iterable<Integer> v) {
@@ -205,16 +207,8 @@ public class SAP {
         if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
             return -1;
         }
-        int index = lengthAndAncestorOfIterablesList.indexOf(new LengthAndAncestorOfIterables(v, w));
-        if (index >= 0) {
-            return lengthAndAncestorOfIterablesList.get(index).getLength();
-        } else {
-            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = computeLengthAndAncestorIterable(v, w);
-            lengthAndAncestorOfIterablesList.add(lengthAndAncestorOfIterables);
-            lengthAndAncestorOfIterablesList.add(new LengthAndAncestorOfIterables(w, v,
-                    lengthAndAncestorOfIterables.getLength(), lengthAndAncestorOfIterables.getAncestor()));
-            return lengthAndAncestorOfIterables.getLength();
-        }
+        final LengthAndAncestor lengthAndAncestor = computeLengthAndAncestor(v, w);
+        return lengthAndAncestor.length;
     }
 
     // a common ancestor that participates in shortest ancestral path; -1 if no such path
@@ -223,18 +217,8 @@ public class SAP {
         if (!v.iterator().hasNext() || !w.iterator().hasNext()) {
             return -1;
         }
-        validateVertexes(v);
-        validateVertexes(w);
-        int index = lengthAndAncestorOfIterablesList.indexOf(new LengthAndAncestorOfIterables(v, w));
-        if (index >= 0) {
-            return lengthAndAncestorOfIterablesList.get(index).getAncestor();
-        } else {
-            final LengthAndAncestorOfIterables lengthAndAncestorOfIterables = computeLengthAndAncestorIterable(v, w);
-            lengthAndAncestorOfIterablesList.add(lengthAndAncestorOfIterables);
-            lengthAndAncestorOfIterablesList.add(new LengthAndAncestorOfIterables(w, v,
-                    lengthAndAncestorOfIterables.getLength(), lengthAndAncestorOfIterables.getAncestor()));
-            return lengthAndAncestorOfIterables.getAncestor();
-        }
+        final LengthAndAncestor lengthAndAncestor = computeLengthAndAncestor(v, w);
+        return lengthAndAncestor.ancestor;
     }
 
     // do unit testing of this class
