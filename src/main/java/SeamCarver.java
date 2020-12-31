@@ -4,10 +4,12 @@ import java.awt.Color;
 
 public class SeamCarver {
 
-    private final Picture picture;
+    private final int width;
+    private final int height;
     private final double[][] energy;
     private final double[][] energyTo;
     private final int[][] edgeTo;
+    private final int[][] rgbColors;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
@@ -15,8 +17,16 @@ public class SeamCarver {
             throw new IllegalArgumentException("picture argument must not be null!");
         }
 
-        this.picture = new Picture(picture);
+        width = picture.width();
+        height = picture.height();
         this.energy = new double[height()][width()];
+        this.rgbColors = new int[height()][width()];
+
+        for (int y = 0; y < height(); y++) {
+            for (int x = 0; x < width(); x++) {
+                rgbColors[y][x] = picture.getRGB(x, y);
+            }
+        }
 
         for (int y = 0; y < height(); y++) {
             for (int x = 0; x < width(); x++) {
@@ -31,17 +41,25 @@ public class SeamCarver {
 
     // current picture
     public Picture picture() {
-        return new Picture(picture);
+        Picture picture = new Picture(width, height);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                picture.setRGB(x, y, rgbColors[y][x]);
+            }
+        }
+
+        return picture;
     }
 
     // width of current picture
     public int width() {
-        return picture.width();
+        return width;
     }
 
     // height of current picture
     public int height() {
-        return picture.height();
+        return height;
     }
 
     private boolean isOnBorder(int x, int y) {
@@ -75,10 +93,10 @@ public class SeamCarver {
         if (isOnBorder(x, y)) {
             result = 1000;
         } else {
-            final Color leftColor = picture.get(x-1, y);
-            final Color rightColor = picture.get(x+1, y);
-            final Color upColor = picture.get(x, y-1);
-            final Color downColor = picture.get(x, y+1);
+            final Color leftColor = new Color(rgbColors[y][x - 1]);
+            final Color rightColor = new Color(rgbColors[y][x + 1]);
+            final Color upColor = new Color(rgbColors[y - 1][x]);
+            final Color downColor = new Color(rgbColors[y + 1][x]);
 
             int squaredDeltaX = getSquareDelta(leftColor, rightColor);
             int squaredDeltaY = getSquareDelta(upColor, downColor);
