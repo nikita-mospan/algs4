@@ -13,7 +13,7 @@ public class WordNet {
 
     private final Digraph digraph;
     private final Map<Integer, Set<String>> synsetIdToNouns;
-    private final Set<String> nouns;
+    private final Map<String, Set<Integer>> nounToSynsetIds;
     private final SAP sap;
 
     // constructor takes the name of the two input files
@@ -23,7 +23,7 @@ public class WordNet {
         }
 
         synsetIdToNouns = new HashMap<>();
-        nouns = new HashSet<>();
+        nounToSynsetIds = new HashMap<>();
 
         final In synsetsIn = new In(synsets);
         while (synsetsIn.hasNextLine()) {
@@ -31,7 +31,9 @@ public class WordNet {
             String[] tokens = line.split(",");
             int synsetId = Integer.parseInt(tokens[0]);
             final Set<String> nounsOfCurSynset = Arrays.stream(tokens[1].split("\\s+")).collect(Collectors.toSet());
-            nouns.addAll(nounsOfCurSynset);
+            for (String noun : nounsOfCurSynset) {
+                nounToSynsetIds.computeIfAbsent(noun, key -> new HashSet<>()).add(synsetId);
+            }
             synsetIdToNouns.put(synsetId, nounsOfCurSynset);
         }
 
@@ -59,7 +61,7 @@ public class WordNet {
 
     // returns all WordNet nouns
     public Iterable<String> nouns() {
-        return nouns;
+        return nounToSynsetIds.keySet();
     }
 
     // is the word a WordNet noun?
@@ -67,7 +69,7 @@ public class WordNet {
         if (word == null) {
             throw new IllegalArgumentException("Argument to isNoun must not be null!");
         }
-        return nouns.contains(word);
+        return nounToSynsetIds.containsKey(word);
     }
 
     private void checkNounsNotNull(String nounA, String nounB) {
@@ -77,8 +79,7 @@ public class WordNet {
     }
 
     private Iterable<Integer> getSynsetsWithNoun(String noun) {
-        return synsetIdToNouns.entrySet().stream().filter(entry -> entry.getValue().contains(noun))
-                .map(Map.Entry::getKey).collect(Collectors.toSet());
+        return nounToSynsetIds.get(noun);
     }
 
     // distance between nounA and nounB (defined below)
