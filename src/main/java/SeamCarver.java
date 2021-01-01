@@ -4,12 +4,12 @@ import java.awt.Color;
 
 public class SeamCarver {
 
-    private final int width;
-    private final int height;
-    private final double[][] energy;
+    private int width;
+    private int height;
+    private double[][] energy;
     private final double[][] energyTo;
     private final int[][] edgeTo;
-    private final int[][] rgbColors;
+    private int[][] rgbColors;
 
     // create a seam carver object based on the given picture
     public SeamCarver(Picture picture) {
@@ -19,23 +19,23 @@ public class SeamCarver {
 
         width = picture.width();
         height = picture.height();
-        this.energy = new double[height()][width()];
-        this.rgbColors = new int[height()][width()];
+        this.energy = new double[height][width];
+        this.rgbColors = new int[height][width];
 
-        for (int y = 0; y < height(); y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 rgbColors[y][x] = picture.getRGB(x, y);
             }
         }
 
-        for (int y = 0; y < height(); y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 energy[y][x] = energy(x, y);
             }
         }
 
-        this.energyTo = new double[height()][width()];
-        this.edgeTo = new int[height()][width()];
+        this.energyTo = new double[height][width];
+        this.edgeTo = new int[height][width];
 
     }
 
@@ -63,7 +63,7 @@ public class SeamCarver {
     }
 
     private boolean isOnBorder(int x, int y) {
-        return x == 0 || x == width() - 1 || y == 0 || y == height() - 1;
+        return x == 0 || x == width - 1 || y == 0 || y == height - 1;
     }
 
     private int getSquareDelta(Color c1, Color c2) {
@@ -75,7 +75,7 @@ public class SeamCarver {
     }
 
     private void checkXAndYWithinRange(int x, int y) {
-        if (x < 0 || x >= width() || y < 0 || y >= height()) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
             throw new IllegalArgumentException("x or y are outside of expected range!");
         }
     }
@@ -83,11 +83,6 @@ public class SeamCarver {
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
         checkXAndYWithinRange(x, y);
-
-        //y is row index and x is column index
-        if (energy[y][x] > 0) {
-            return energy[y][x];
-        }
 
         double result;
         if (isOnBorder(x, y)) {
@@ -135,17 +130,17 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
-        for (int x = 0; x < width(); x++) {
-            for (int y = 0; y < height(); y++) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 energyTo[y][x] = Double.POSITIVE_INFINITY;
             }
         }
-        for (int y = 0; y < height(); y++) {
+        for (int y = 0; y < height; y++) {
             energyTo[y][0] = 0;
         }
 
-        for (int x = 0; x < width(); x++) {
-            for (int y = 0; y < height() - 1; y++) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height - 1; y++) {
                 relax(x, y, y - 1, false);
                 relax(x, y, y, false);
                 relax(x, y, y + 1, false);
@@ -154,16 +149,16 @@ public class SeamCarver {
 
         double minEnergyOnRight = Double.POSITIVE_INFINITY;
         int yWithMinEnergyOnRight = -1;
-        for (int y = 0; y < height(); y++) {
-            if (energyTo[y][width() - 1] < minEnergyOnRight) {
+        for (int y = 0; y < height; y++) {
+            if (energyTo[y][width - 1] < minEnergyOnRight) {
                 yWithMinEnergyOnRight = y;
-                minEnergyOnRight = energyTo[y][width() - 1];
+                minEnergyOnRight = energyTo[y][width - 1];
             }
         }
 
-        int[] result = new int[width()];
+        int[] result = new int[width];
         int y = yWithMinEnergyOnRight;
-        for (int x = width() - 1; x >= 0; x--) {
+        for (int x = width - 1; x >= 0; x--) {
             result[x] = y;
             y = edgeTo[y][x];
         }
@@ -173,17 +168,17 @@ public class SeamCarver {
 
     // sequence of indices for vertical seam
     public int[] findVerticalSeam() {
-        for (int y = 0; y < height(); y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 energyTo[y][x] = Double.POSITIVE_INFINITY;
             }
         }
-        for (int x = 0; x < width(); x++) {
+        for (int x = 0; x < width; x++) {
             energyTo[0][x] = 0;
         }
 
-        for (int y = 0; y < height() - 1; y++) {
-            for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height - 1; y++) {
+            for (int x = 0; x < width; x++) {
                 relax(x, y, x - 1, true);
                 relax(x, y, x, true);
                 relax(x, y, x + 1, true);
@@ -192,16 +187,16 @@ public class SeamCarver {
 
         double minEnergyOnBottom = Double.POSITIVE_INFINITY;
         int xWithMinEnergyOnBottom = -1;
-        for (int x = 0; x < width(); x++) {
-            if (energyTo[height() - 1][x] < minEnergyOnBottom) {
+        for (int x = 0; x < width; x++) {
+            if (energyTo[height - 1][x] < minEnergyOnBottom) {
                 xWithMinEnergyOnBottom = x;
-                minEnergyOnBottom = energyTo[height() - 1][x];
+                minEnergyOnBottom = energyTo[height - 1][x];
             }
         }
 
-        int[] result = new int[height()];
+        int[] result = new int[height];
         int x = xWithMinEnergyOnBottom;
-        for (int y = height() - 1; y >= 0; y--) {
+        for (int y = height - 1; y >= 0; y--) {
             result[y] = x;
             x = edgeTo[y][x];
         }
@@ -225,37 +220,85 @@ public class SeamCarver {
         }
     }
 
+    private void transposeRgbColorsAndEnergy() {
+        int[][] transposedRgbColors = new int[width][height];
+        double[][] transposedEnergy = new double[width][height];
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                transposedRgbColors[x][y] = rgbColors[y][x];
+                transposedEnergy[x][y] = energy[y][x];
+            }
+        }
+
+        rgbColors = transposedRgbColors;
+        energy = transposedEnergy;
+        int temp = width;
+        //noinspection SuspiciousNameCombination
+        width = height;
+        height = temp;
+    }
+
     // remove horizontal seam from current picture
     public void removeHorizontalSeam(int[] seam) {
         checkSeamNotNull(seam);
-        if (height() <= 1) {
+        if (height <= 1) {
             throw new IllegalArgumentException("Can not remove horizontal seam when height is 1 or less");
         }
-        if (seam.length != width()) {
-            throw new IllegalArgumentException(String.format("Seam width must be %d but got %d", width(), seam.length));
+        if (seam.length != width) {
+            throw new IllegalArgumentException(String.format("Seam width must be %d but got %d", width, seam.length));
         }
         checkSeamIsConsecutive(seam);
 
+        transposeRgbColorsAndEnergy();
+        removeVerticalSeam(seam);
+        transposeRgbColorsAndEnergy();
 
+    }
 
+    private void updateEnergyOfSinglePixel(int x, int y) {
+        try {
+            checkXAndYWithinRange(x, y);
+            energy[y][x] = energy(x, y);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    // x, y is the position of deleted pixel
+    //so we should recompute energy for (x, y), (x - 1, y), (x, y -1), (x, y + 1)
+    private void updateEnergyOfNeighbors(int x, int y) {
+        updateEnergyOfSinglePixel(x, y);
+        updateEnergyOfSinglePixel(x - 1, y);
+        updateEnergyOfSinglePixel(x, y - 1);
+        updateEnergyOfSinglePixel(x, y + 1);
     }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
         checkSeamNotNull(seam);
-        if (width() <= 1) {
+        if (width <= 1) {
             throw new IllegalArgumentException("Can not remove vertical seam when width is 1 or less");
         }
-        if (seam.length != height()) {
-            throw new IllegalArgumentException(String.format("Seam height must be %d but got %d", height(), seam.length));
+        if (seam.length != height) {
+            throw new IllegalArgumentException(String.format("Seam height must be %d but got %d", height, seam.length));
         }
         checkSeamIsConsecutive(seam);
 
-//        for (int y = 0; y < height(); y++) {
-//            picture.
-//        }
+        width--;
+        int[] newRowRgb = new int[width];
+        double[] newRowEnergy = new double[width];
+        for (int y = 0; y < height; y++) {
+            System.arraycopy(rgbColors[y], 0, newRowRgb, 0, seam[y]);
+            System.arraycopy(rgbColors[y], seam[y] + 1, newRowRgb, seam[y], newRowRgb.length - seam[y]);
+            System.arraycopy(newRowRgb, 0, rgbColors[y], 0, width);
 
+            System.arraycopy(energy[y], 0, newRowEnergy, 0, seam[y]);
+            System.arraycopy(energy[y], seam[y] + 1, newRowEnergy, seam[y], newRowRgb.length - seam[y]);
+            System.arraycopy(newRowEnergy, 0, energy[y], 0, width);
+        }
 
+        for (int y = 0; y < height; y++) {
+            updateEnergyOfNeighbors(seam[y], y);
+        }
 
     }
 
