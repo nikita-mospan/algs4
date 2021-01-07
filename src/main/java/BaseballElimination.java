@@ -91,7 +91,7 @@ public class BaseballElimination {
 
     public boolean isEliminated(String team) {
         checkTeamIsValid(team);
-        return certificateOfElimination(team).iterator().hasNext();
+        return certificateOfElimination(team) != null;
     }
 
     private int getTrivialCertificate(String team) {
@@ -143,7 +143,12 @@ public class BaseballElimination {
 
     public Iterable<String> certificateOfElimination(String team) {
         checkTeamIsValid(team);
-        return teamToCertificateOfElimination.computeIfAbsent(team, this::certificateOfEliminationPrivate);
+        final Iterable<String> certificateOfElimination = teamToCertificateOfElimination.computeIfAbsent(team, this::certificateOfEliminationPrivate);
+        if (certificateOfElimination.iterator().hasNext()) {
+            return certificateOfElimination;
+        } else {
+            return null;
+        }
     }
 
     private FlowNetwork getFlowNetwork(String teamToCheck) {
