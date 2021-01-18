@@ -1,7 +1,7 @@
 import edu.princeton.cs.algs4.Queue;
 
 public class TrieSetAZ {
-    //English alphabet
+    // English alphabet
     private static final int R = 26;
 
     private Node root;      // root of trie
@@ -112,35 +112,6 @@ public class TrieSetAZ {
             collect(node.next[c], prefix, results);
             prefix.deleteCharAt(prefix.length() - 1);
         }
-    }
-
-    /**
-     * Removes the key from the set if the key is present.
-     *
-     * @param key the key
-     * @throws IllegalArgumentException if {@code key} is {@code null}
-     */
-    public void delete(String key) {
-        if (key == null) throw new IllegalArgumentException("argument to delete() is null");
-        root = delete(root, key, 0);
-    }
-
-    private Node delete(Node x, String key, int d) {
-        if (x == null) return null;
-        if (d == key.length()) {
-            if (x.isString) n--;
-            x.isString = false;
-        } else {
-            int c = charAt(key, d);
-            x.next[c] = delete(x.next[c], key, d + 1);
-        }
-
-        // remove subtrie rooted at x if it is completely empty
-        if (x.isString) return x;
-        for (int c = 0; c < R; c++)
-            if (x.next[c] != null)
-                return x;
-        return null;
     }
 
 }

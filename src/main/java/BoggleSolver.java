@@ -24,41 +24,43 @@ public class BoggleSolver {
     public BoggleSolver(String[] dictionary) {
         trieSetAZ = new TrieSetAZ();
         for (String word : dictionary) {
-            trieSetAZ.add(word);
+            if (!word.contains("Q") || (word.split("Q", -1).length == word.split("QU", -1).length)) {
+                trieSetAZ.add(word);
+            }
         }
     }
 
     private Iterable<Integer> getAdjacentDies(BoggleBoard board, int rowId, int colId) {
         Bag<Integer> adjacentLetters = new Bag<>();
         if (rowId > 0) {
-            adjacentLetters.add(getDieId(board.rows(), rowId - 1, colId));
+            adjacentLetters.add(getDieId(board.cols(), rowId - 1, colId));
         }
         if (colId > 0) {
-            adjacentLetters.add(getDieId(board.rows(), rowId, colId - 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId, colId - 1));
         }
         if (rowId > 0 && colId > 0) {
-            adjacentLetters.add(getDieId(board.rows(), rowId - 1, colId - 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId - 1, colId - 1));
         }
         if (rowId < board.rows() - 1) {
-            adjacentLetters.add(getDieId(board.rows(), rowId + 1, colId));
+            adjacentLetters.add(getDieId(board.cols(), rowId + 1, colId));
         }
         if (colId < board.cols() - 1) {
-            adjacentLetters.add(getDieId(board.rows(), rowId, colId + 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId, colId + 1));
         }
         if (rowId < board.rows() - 1 && colId < board.cols() - 1) {
-            adjacentLetters.add(getDieId(board.rows(), rowId + 1, colId + 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId + 1, colId + 1));
         }
         if (rowId > 0 && colId < board.cols() - 1) {
-            adjacentLetters.add(getDieId(board.rows(), rowId - 1, colId + 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId - 1, colId + 1));
         }
         if (rowId < board.rows() - 1 && colId > 0) {
-            adjacentLetters.add(getDieId(board.rows(), rowId + 1, colId - 1));
+            adjacentLetters.add(getDieId(board.cols(), rowId + 1, colId - 1));
         }
         return adjacentLetters;
     }
 
-    private int getDieId(int rows, int rowId, int colId) {
-        return rows * rowId + colId;
+    private int getDieId(int cols, int rowId, int colId) {
+        return cols * rowId + colId;
     }
 
     private RowColIds getRowColFromDieId(int cols, int dieId) {
@@ -68,7 +70,7 @@ public class BoggleSolver {
     private String charStackToString(Stack<Character> charStack) {
         char[] charArray = new char[charStack.size()];
         int i = charStack.size() - 1;
-        for (Character character : charStack) {
+        for (char character : charStack) {
             charArray[i] = character;
             i--;
         }
@@ -78,8 +80,12 @@ public class BoggleSolver {
     private void populateValidWordsFromSingleDie(BoggleBoard board, int rowId, int colId, Stack<Character> charStack,
                                                  Set<String> validWords, boolean[] marked) {
 
-        marked[getDieId(board.rows(), rowId, colId)] = true;
-        charStack.push(board.getLetter(rowId, colId));
+        marked[getDieId(board.cols(), rowId, colId)] = true;
+        char curLetter = board.getLetter(rowId, colId);
+        charStack.push(curLetter);
+        if (curLetter == 'Q') {
+            charStack.push('U');
+        }
         final String curPrefix = charStackToString(charStack);
         if (curPrefix.length() >= 3 && trieSetAZ.contains(curPrefix)) {
             validWords.add(curPrefix);
@@ -96,19 +102,40 @@ public class BoggleSolver {
         }
 
         charStack.pop();
-        marked[getDieId(board.rows(), rowId, colId)] = false;
+        if (curLetter == 'Q') {
+            charStack.pop();
+        }
+        marked[getDieId(board.cols(), rowId, colId)] = false;
 
+    }
+
+    private boolean isBoardOfTheSameLetter(BoggleBoard board) {
+        char curLetter = board.getLetter(0, 0);
+        for (int rowId = 0; rowId < board.rows(); rowId++) {
+            for (int colId = 0; colId < board.cols(); colId++) {
+                if (rowId == 0 && colId == 0) {
+                    continue;
+                }
+                if (curLetter != board.getLetter(rowId, colId)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public Iterable<String> getAllValidWords(BoggleBoard board) {
         final Set<String> allValidWords = new HashSet<>();
         final boolean[] marked = new boolean[board.rows() * board.cols()];
+        final boolean boardOfTheSameLetter = isBoardOfTheSameLetter(board);
 
         for (int rowId = 0; rowId < board.rows(); rowId++) {
             for (int colId = 0; colId < board.cols(); colId++) {
                 Arrays.fill(marked, false);
-                Stack<Character> charStack = new Stack<>();
-                populateValidWordsFromSingleDie(board, rowId, colId, charStack, allValidWords, marked);
+                populateValidWordsFromSingleDie(board, rowId, colId, new Stack<>(), allValidWords, marked);
+                if (boardOfTheSameLetter) {
+                    return allValidWords;
+                }
             }
         }
 
@@ -116,6 +143,10 @@ public class BoggleSolver {
     }
 
     public int scoreOf(String word) {
+        if (!trieSetAZ.contains(word) || word.length() < 3) {
+            return 0;
+        }
+
         switch (word.length()) {
             case 3:
             case 4:
