@@ -3,8 +3,10 @@ import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdOut;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class BoggleSolver {
@@ -78,7 +80,7 @@ public class BoggleSolver {
     }
 
     private void populateValidWordsFromSingleDie(BoggleBoard board, int rowId, int colId, Stack<Character> charStack,
-                                                 Set<String> validWords, boolean[] marked) {
+                                                 Set<String> validWords, boolean[] marked, List<Iterable<Integer>> adjacentDies) {
 
         marked[getDieId(board.cols(), rowId, colId)] = true;
         char curLetter = board.getLetter(rowId, colId);
@@ -90,13 +92,13 @@ public class BoggleSolver {
         if (curPrefix.length() >= 3 && trieSetAZ.contains(curPrefix)) {
             validWords.add(curPrefix);
         }
-        if (trieSetAZ.keysWithPrefix(curPrefix).iterator().hasNext()) {
-            for (int dieId : getAdjacentDies(board, rowId, colId)) {
+        if (trieSetAZ.containsPrefix(curPrefix)) {
+            for (int dieId : adjacentDies.get(getDieId(board.cols(), rowId, colId))) {
                 RowColIds rowColIds = getRowColFromDieId(board.cols(), dieId);
                 int adjRowid = rowColIds.rowId;
                 int adjColId = rowColIds.colId;
                 if (!marked[dieId]) {
-                    populateValidWordsFromSingleDie(board, adjRowid, adjColId, charStack, validWords, marked);
+                    populateValidWordsFromSingleDie(board, adjRowid, adjColId, charStack, validWords, marked, adjacentDies);
                 }
             }
         }
@@ -126,13 +128,19 @@ public class BoggleSolver {
 
     public Iterable<String> getAllValidWords(BoggleBoard board) {
         final Set<String> allValidWords = new HashSet<>();
-        final boolean[] marked = new boolean[board.rows() * board.cols()];
+        final int boardSize = board.rows() * board.cols();
+        final boolean[] marked = new boolean[boardSize];
         final boolean boardOfTheSameLetter = isBoardOfTheSameLetter(board);
+        final List<Iterable<Integer>> adjacentDies = new ArrayList<>(boardSize);
+        for (int dieId = 0; dieId < boardSize; dieId++) {
+            final RowColIds rowColIds = getRowColFromDieId(board.cols(), dieId);
+            adjacentDies.add(getAdjacentDies(board, rowColIds.rowId, rowColIds.colId));
+        }
 
         for (int rowId = 0; rowId < board.rows(); rowId++) {
             for (int colId = 0; colId < board.cols(); colId++) {
                 Arrays.fill(marked, false);
-                populateValidWordsFromSingleDie(board, rowId, colId, new Stack<>(), allValidWords, marked);
+                populateValidWordsFromSingleDie(board, rowId, colId, new Stack<>(), allValidWords, marked, adjacentDies);
                 if (boardOfTheSameLetter) {
                     return allValidWords;
                 }

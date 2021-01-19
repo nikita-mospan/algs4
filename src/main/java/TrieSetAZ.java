@@ -1,5 +1,3 @@
-import edu.princeton.cs.algs4.Queue;
-
 public class TrieSetAZ {
     // English alphabet
     private static final int R = 26;
@@ -21,6 +19,12 @@ public class TrieSetAZ {
 
     private static int charAt(String key, int d) {
         return (int) key.charAt(d) - 65;
+    }
+
+    public boolean containsPrefix(String prefix) {
+        if (prefix == null) throw new IllegalArgumentException("argument to getNodeWithPrefix() is null");
+        Node node = get(root, prefix, 0);
+        return node != null;
     }
 
     /**
@@ -84,34 +88,6 @@ public class TrieSetAZ {
      */
     public boolean isEmpty() {
         return size() == 0;
-    }
-
-    /**
-     * Returns all of the keys in the set that start with {@code prefix}.
-     *
-     * @param prefix the prefix
-     * @return all of the keys in the set that start with {@code prefix},
-     * as an iterable
-     */
-    public Iterable<String> keysWithPrefix(String prefix) {
-        Queue<String> results = new Queue<>();
-        Node x = get(root, prefix, 0);
-        collect(x, new StringBuilder(prefix), results);
-        return results;
-    }
-
-    private void collect(Node node, StringBuilder prefix, Queue<String> results) {
-        if (node == null) {
-            return;
-        }
-        if (node.isString) {
-            results.enqueue(prefix.toString());
-        }
-        for (char c = 0; c < R; c++) {
-            prefix.append(c);
-            collect(node.next[c], prefix, results);
-            prefix.deleteCharAt(prefix.length() - 1);
-        }
     }
 
 }
