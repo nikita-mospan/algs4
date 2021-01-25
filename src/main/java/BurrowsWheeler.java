@@ -35,7 +35,45 @@ public class BurrowsWheeler {
     // apply Burrows-Wheeler inverse transform,
     // reading from standard input and writing to standard output
     public static void inverseTransform() {
+        while (!BinaryStdIn.isEmpty()) {
+            final int first = BinaryStdIn.readInt();
+            final String encodedString = BinaryStdIn.readString();
+            final int length = encodedString.length();
+            int R = 256;   // extend ASCII alphabet size
+            char[] aux = new char[length];
+            int[] count = new int[R+1];
+            int[] next = new int[length];
 
+            for (int i = 0; i < length; i++)
+                count[encodedString.charAt(i) + 1]++;
+
+            // compute cumulates
+            for (int r = 0; r < R; r++)
+                count[r+1] += count[r];
+
+            // compute next
+            for (int i = 0; i < length; i++) {
+                aux[count[encodedString.charAt(i)]] = encodedString.charAt(i);
+                next[count[encodedString.charAt(i)]] = i;
+                count[encodedString.charAt(i)] = count[encodedString.charAt(i)] + 1;
+            }
+//            System.out.println(encodedString);
+//            System.out.println("aux: " + Arrays.toString(aux));
+//            System.out.println("next: " + Arrays.toString(next));
+
+            char[] decodedChars = new char[length];
+            decodedChars[0] = aux[first];
+            BinaryStdOut.write(decodedChars[0]);
+            int nextPos = next[first];
+            for (int i = 1; i < decodedChars.length - 1; i++) {
+                decodedChars[i] = aux[nextPos];
+                BinaryStdOut.write(decodedChars[i]);
+                nextPos = next[nextPos];
+            }
+            decodedChars[length-1] = encodedString.charAt(first);
+            BinaryStdOut.write(decodedChars[length - 1]);
+        }
+        BinaryStdOut.close();
     }
 
     // if args[0] is "-", apply Burrows-Wheeler transform
@@ -43,6 +81,9 @@ public class BurrowsWheeler {
     public static void main(String[] args) {
         if (args[0].equals("-")) {
             transform();
+        }
+        if (args[0].equals("+")) {
+            inverseTransform();
         }
     }
 
