@@ -1,9 +1,35 @@
+import edu.princeton.cs.algs4.BinaryStdIn;
+import edu.princeton.cs.algs4.BinaryStdOut;
+
 public class BurrowsWheeler {
 
     // apply Burrows-Wheeler transform,
     // reading from standard input and writing to standard output
     public static void transform() {
-
+        while (!BinaryStdIn.isEmpty()) {
+            final String readString = BinaryStdIn.readString();
+            final int length = readString.length();
+            final CircularSuffixArray circularSuffixArray = new CircularSuffixArray(readString);
+            final char[] transformCharArray = new char[length];
+            int first = -1;
+            for (int i = 0; i < length; i++) {
+                final int circularSuffixArrayIndex = circularSuffixArray.index(i);
+                if (circularSuffixArrayIndex == 0) {
+                    first = i;
+                    transformCharArray[i] = readString.charAt(length - 1);
+                } else {
+                    transformCharArray[i] = readString.charAt((circularSuffixArrayIndex % length) - 1);
+                }
+            }
+            if (first == -1) {
+                throw new IllegalStateException("first variable must be positive");
+            }
+            BinaryStdOut.write(first);
+            for (char c : transformCharArray) {
+                BinaryStdOut.write(c);
+            }
+        }
+        BinaryStdOut.close();
     }
 
     // apply Burrows-Wheeler inverse transform,
@@ -15,7 +41,9 @@ public class BurrowsWheeler {
     // if args[0] is "-", apply Burrows-Wheeler transform
     // if args[0] is "+", apply Burrows-Wheeler inverse transform
     public static void main(String[] args) {
-
+        if (args[0].equals("-")) {
+            transform();
+        }
     }
 
 }
