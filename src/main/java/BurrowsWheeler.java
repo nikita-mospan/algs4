@@ -39,16 +39,16 @@ public class BurrowsWheeler {
             final int first = BinaryStdIn.readInt();
             final String encodedString = BinaryStdIn.readString();
             final int length = encodedString.length();
-            int R = 256;   // extend ASCII alphabet size
+            final int alphabetSize = 256;   // extend ASCII alphabet size
             char[] aux = new char[length];
-            int[] count = new int[R+1];
+            int[] count = new int[alphabetSize+1];
             int[] next = new int[length];
 
             for (int i = 0; i < length; i++)
                 count[encodedString.charAt(i) + 1]++;
 
             // compute cumulates
-            for (int r = 0; r < R; r++)
+            for (int r = 0; r < alphabetSize; r++)
                 count[r+1] += count[r];
 
             // compute next
@@ -64,7 +64,9 @@ public class BurrowsWheeler {
                 BinaryStdOut.write(aux[nextPos]);
                 nextPos = next[nextPos];
             }
-            BinaryStdOut.write(encodedString.charAt(first));
+            if (length > 1) {
+                BinaryStdOut.write(encodedString.charAt(first));
+            }
         }
         BinaryStdOut.close();
     }
