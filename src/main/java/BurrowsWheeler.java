@@ -61,17 +61,16 @@ public class BurrowsWheeler {
 //            System.out.println("aux: " + Arrays.toString(aux));
 //            System.out.println("next: " + Arrays.toString(next));
 
-            char[] decodedChars = new char[length];
-            decodedChars[0] = aux[first];
-            BinaryStdOut.write(decodedChars[0]);
+//            char[] decodedChars = new char[length];
+//            decodedChars[0] = aux[first];
+            BinaryStdOut.write(aux[first]);
             int nextPos = next[first];
-            for (int i = 1; i < decodedChars.length - 1; i++) {
-                decodedChars[i] = aux[nextPos];
-                BinaryStdOut.write(decodedChars[i]);
+            for (int i = 1; i < length - 1; i++) {
+                BinaryStdOut.write(aux[nextPos]);
                 nextPos = next[nextPos];
             }
-            decodedChars[length-1] = encodedString.charAt(first);
-            BinaryStdOut.write(decodedChars[length - 1]);
+//            decodedChars[length-1] = encodedString.charAt(first);
+            BinaryStdOut.write(encodedString.charAt(first));
         }
         BinaryStdOut.close();
     }
