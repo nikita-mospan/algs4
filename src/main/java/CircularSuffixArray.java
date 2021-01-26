@@ -1,21 +1,20 @@
 import java.util.Iterator;
-import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class CircularSuffixArray {
 
     private final int n;
     private final CircularSuffix[] arrayOfSortedCircularSuffixes;
-    private final TreeMap<CircularSuffix, Integer> circularSuffixToIndex;
 
     private static class CircularSuffix implements Comparable<CircularSuffix>, Iterable<Character> {
         private final String inputString;
-        private final int firstPositionOfCharInSuffix;
+        private final int startPositionInSuffix;
 
         private class CircularSuffixIterator implements Iterator<Character> {
 
             private final int length = inputString.length();
             private int numberOfCharsLeft = length;
-            private int curPosition = firstPositionOfCharInSuffix;
+            private int curPosition = startPositionInSuffix;
 
             @Override
             public boolean hasNext() {
@@ -31,9 +30,9 @@ public class CircularSuffixArray {
             }
         }
 
-        public CircularSuffix(String s, int firstPositionOfCharInSuffix) {
+        public CircularSuffix(String s, int startPositionInSuffix) {
             inputString = s;
-            this.firstPositionOfCharInSuffix = firstPositionOfCharInSuffix;
+            this.startPositionInSuffix = startPositionInSuffix;
         }
 
         @Override
@@ -64,14 +63,14 @@ public class CircularSuffixArray {
         }
         n = s.length();
         arrayOfSortedCircularSuffixes = new CircularSuffix[n];
-        circularSuffixToIndex = new TreeMap<>(CircularSuffix::compareTo);
+        final TreeSet<CircularSuffix> circularSuffixTreeSet = new TreeSet<>(CircularSuffix::compareTo);
 
         for (int idx = 0; idx < n; idx++) {
-            circularSuffixToIndex.put(new CircularSuffix(s, idx), idx);
+            circularSuffixTreeSet.add(new CircularSuffix(s, idx));
         }
 
         int idx = 0;
-        for (CircularSuffix circularSuffix : circularSuffixToIndex.keySet()) {
+        for (CircularSuffix circularSuffix : circularSuffixTreeSet) {
             arrayOfSortedCircularSuffixes[idx] = circularSuffix;
             idx++;
         }
@@ -83,20 +82,22 @@ public class CircularSuffixArray {
     }
 
     // returns index of ith sorted suffix
-    public int index(int i) {
+    public int  index(int i) {
         if (i < 0 || i >= n) {
             throw new IllegalArgumentException("i argument must be between 0 and " + (n - 1));
         }
-        return circularSuffixToIndex.get(arrayOfSortedCircularSuffixes[i]);
+        return arrayOfSortedCircularSuffixes[i].startPositionInSuffix;
 
     }
 
     // unit testing (required)
     public static void main(String[] args) {
+
         String s = "ABRACADABRA!";
         final CircularSuffixArray circularSuffixArray = new CircularSuffixArray(s);
         System.out.println(circularSuffixArray.length());
         System.out.println(circularSuffixArray.index(6));
+
     }
 
 }
