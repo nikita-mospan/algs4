@@ -19,15 +19,20 @@ public class MoveToFront {
         final char[] charToIdx = getAlphabet();
 
         while (!BinaryStdIn.isEmpty()) {
-            char c = BinaryStdIn.readChar();
-            char idxOfC = charToIdx[c];
-            BinaryStdOut.write(idxOfC);
+            char curChar = BinaryStdIn.readChar();
+            char curIdx = charToIdx[curChar];
+            BinaryStdOut.write(curIdx);
+            char numberOfShifts = 0;
             for (char i = 0; i < charToIdx.length; i++) {
-                if (charToIdx[i] < idxOfC) {
+                if (numberOfShifts == curIdx) {
+                    break;
+                }
+                if (charToIdx[i] < curIdx) {
                     charToIdx[i]++;
+                    numberOfShifts++;
                 }
             }
-            charToIdx[c] = 0;
+            charToIdx[curChar] = 0;
         }
         BinaryStdOut.close();
     }
