@@ -2,8 +2,8 @@ import edu.princeton.cs.algs4.BinaryStdIn;
 import edu.princeton.cs.algs4.BinaryStdOut;
 
 public class MoveToFront {
-    // apply move-to-front encoding, reading from standard input and writing to standard output
-    public static void encode() {
+
+    private static char[] getAlphabet() {
         // extended ASCII
         final int R = 256;
         final char[] alphabet = new char[R];
@@ -11,23 +11,39 @@ public class MoveToFront {
             alphabet[i] = i;
         }
 
+        return alphabet;
+    }
+
+    // apply move-to-front encoding, reading from standard input and writing to standard output
+    public static void encode() {
+        final char[] charToIdx = getAlphabet();
+
         while (!BinaryStdIn.isEmpty()) {
             char c = BinaryStdIn.readChar();
-            char idxOfC = alphabet[c];
+            char idxOfC = charToIdx[c];
             BinaryStdOut.write(idxOfC);
-            for (char i = 0; i < R; i++) {
-                if (alphabet[i] < idxOfC) {
-                    alphabet[i]++;
+            for (char i = 0; i < charToIdx.length; i++) {
+                if (charToIdx[i] < idxOfC) {
+                    charToIdx[i]++;
                 }
             }
-            alphabet[c] = 0;
+            charToIdx[c] = 0;
         }
         BinaryStdOut.close();
     }
 
     // apply move-to-front decoding, reading from standard input and writing to standard output
     public static void decode() {
+        final char[] idxToChar = getAlphabet();
 
+        while (!BinaryStdIn.isEmpty()) {
+            char curIdx = BinaryStdIn.readChar();
+            char curChar = idxToChar[curIdx];
+            BinaryStdOut.write(curChar);
+            System.arraycopy(idxToChar, 0, idxToChar, 1, curIdx);
+            idxToChar[0] = curChar;
+        }
+        BinaryStdOut.close();
     }
 
     // if args[0] is "-", apply move-to-front encoding
@@ -35,6 +51,9 @@ public class MoveToFront {
     public static void main(String[] args) {
         if (args[0].equals("-")) {
             encode();
+        }
+        if (args[0].equals("+")) {
+            decode();
         }
     }
 
