@@ -1,0 +1,2 @@
+java MoveToFront - < abra.txt | java -cp "../../../target/classes" edu.princeton.cs.algs4.HexDump 16
+https://coursera.cs.princeton.edu/algs4/assignments/burrows/specification.php
